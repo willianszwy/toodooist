@@ -12,9 +12,11 @@
     --color-text-primary: #222;
     --color-text-secondary: #717171;
     --color-white: #ffffff;
-    --border-radius-sm: 12px;
-    --border-radius-md: 16px;
+    --border-radius-sm: 2px;
+    --border-radius-md: 3px;
     --border-radius-lg: 20px;
+    --shadow-postit: 0 4px 8px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
+    --shadow-postit-hover: 0 8px 16px rgba(0, 0, 0, 0.2), 0 4px 8px rgba(0, 0, 0, 0.15);
     --shadow-soft: 0 2px 16px rgba(0, 0, 0, 0.08);
     --shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.12);
     --transition: cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -72,25 +74,61 @@ body {
 /* Post-its Grid */
 .postits-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 24px;
+    grid-template-columns: repeat(auto-fill, 250px);
+    gap: 30px;
     margin-bottom: 48px;
+    justify-content: center;
+    align-items: start;
 }
 
 .postit {
     background: var(--color-white);
     border-radius: var(--border-radius-md);
-    padding: 24px;
-    box-shadow: var(--shadow-soft);
+    padding: 20px;
+    box-shadow: var(--shadow-postit);
     position: relative;
     cursor: grab;
     transition: all 0.3s var(--transition);
-    overflow: hidden;
+    width: 250px;
+    height: 250px;
+    transform-origin: center center;
+    
+    /* Paper texture effect */
+    background-image: 
+        radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0),
+        linear-gradient(45deg, transparent 24%, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.05) 26%, transparent 27%);
+    background-size: 20px 20px, 40px 40px;
+    
+    /* Slight paper curl effect */
+    border-bottom: 1px solid rgba(0,0,0,0.03);
+    border-right: 1px solid rgba(0,0,0,0.03);
+}
+
+/* Add sticky tape effect at the top */
+.postit::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 2px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    z-index: 10;
+    
+    /* Tape texture */
+    background-image: linear-gradient(90deg, 
+        rgba(255,255,255,0.1) 0%, 
+        rgba(0,0,0,0.02) 50%, 
+        rgba(255,255,255,0.1) 100%
+    );
 }
 
 .postit:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-hover);
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: var(--shadow-postit-hover);
 }
 
 .postit:active {
@@ -100,33 +138,36 @@ body {
 .postit.dragging {
     transition: none;
     z-index: 1000;
+    transform: rotate(5deg) scale(1.05);
 }
 
-.postit-color-bar {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
-}
 
 .postit-content {
-    margin-top: 8px;
+    margin-top: 15px;
+    height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    position: relative;
+    z-index: 5;
 }
 
 .postit-description {
     font-size: 1.1rem;
     font-weight: 500;
-    color: var(--color-text-primary);
+    color: rgba(0, 0, 0, 0.8);
     margin-bottom: 12px;
     word-wrap: break-word;
+    line-height: 1.4;
+    text-shadow: 0 1px 1px rgba(255,255,255,0.3);
 }
 
 .postit-date {
     font-size: 0.9rem;
-    color: var(--color-text-secondary);
+    color: rgba(0, 0, 0, 0.6);
     font-weight: 400;
+    margin-top: auto;
+    text-shadow: 0 1px 1px rgba(255,255,255,0.3);
 }
 
 /* Empty State */
@@ -434,11 +475,15 @@ body {
     
     .postits-grid {
         grid-template-columns: 1fr;
-        gap: 16px;
+        gap: 20px;
+        justify-content: center;
     }
     
     .postit {
         padding: 20px;
+        width: 280px;
+        height: 280px;
+        margin: 0 auto;
     }
     
     .fab {

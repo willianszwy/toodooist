@@ -65,7 +65,8 @@ function App() {
       description: description.trim(),
       date: date || null,
       color: color,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      rotation: (Math.random() - 0.5) * 8 // Random rotation between -4 and 4 degrees
     }
     
     const newPostits = [...postits, postit]
@@ -218,22 +219,26 @@ function App() {
             {postits.map(postit => {
               const isDraggedElement = dragElement === postit.id
               const progress = isDraggedElement ? Math.min(dragCurrentX / 150, 1) : 0
-              const rotation = progress * 15
+              const dragRotation = progress * 15
               const opacity = 1 - (progress * 0.7)
+              const baseRotation = postit.rotation || 0
               
               return (
                 <div
                   key={postit.id}
                   className={`postit ${isDraggedElement && isDragging ? 'dragging' : ''}`}
                   style={isDraggedElement ? {
-                    transform: `translateX(${dragCurrentX}px) rotate(${rotation}deg)`,
+                    transform: `translateX(${dragCurrentX}px) rotate(${baseRotation + dragRotation}deg)`,
                     opacity: dragCurrentX > 150 ? 0 : opacity,
-                    transition: !isDragging && dragCurrentX > 150 ? 'all 0.3s ease-out' : 'none'
-                  } : {}}
+                    transition: !isDragging && dragCurrentX > 150 ? 'all 0.3s ease-out' : 'none',
+                    backgroundColor: postit.color
+                  } : {
+                    transform: `rotate(${baseRotation}deg)`,
+                    backgroundColor: postit.color
+                  }}
                   onMouseDown={(e) => handleDragStart(e, postit.id)}
                   onTouchStart={(e) => handleDragStart(e, postit.id)}
                 >
-                  <div className="postit-color-bar" style={{ backgroundColor: postit.color }}></div>
                   <div className="postit-content">
                     <div className="postit-description">{postit.description}</div>
                     {postit.date && (
