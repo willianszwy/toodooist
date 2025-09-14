@@ -69,6 +69,8 @@ body {
 /* Main Content */
 .main {
     padding: 48px 0 120px;
+    position: relative;
+    overflow: hidden;
 }
 
 /* Post-its Grid */
@@ -79,6 +81,8 @@ body {
     margin-bottom: 48px;
     justify-content: center;
     align-items: start;
+    position: relative;
+    min-height: 400px;
 }
 
 .postit {
@@ -138,7 +142,12 @@ body {
 .postit.dragging {
     transition: none;
     z-index: 1000;
-    transform: rotate(5deg) scale(1.05);
+    cursor: grabbing !important;
+}
+
+/* Absolute positioned post-its */
+.postit[style*="position: absolute"] {
+    margin: 0;
 }
 
 

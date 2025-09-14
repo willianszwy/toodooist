@@ -7,8 +7,8 @@ function App() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [dragElement, setDragElement] = useState(null)
-  const [dragCurrentX, setDragCurrentX] = useState(0)
-  const [dragStartX, setDragStartX] = useState(0)
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [description, setDescription] = useState('')
   const [date, setDate] = useState('')
 
@@ -66,7 +66,8 @@ function App() {
       date: date || null,
       color: color,
       createdAt: new Date().toISOString(),
-      rotation: (Math.random() - 0.5) * 8 // Random rotation between -4 and 4 degrees
+      rotation: (Math.random() - 0.5) * 8, // Random rotation between -4 and 4 degrees
+      position: { x: 0, y: 0 } // Initial position will be set by CSS grid
     }
     
     const newPostits = [...postits, postit]
@@ -129,42 +130,75 @@ function App() {
   }
 
 
+  // Update post-it position
+  const updatePostitPosition = useCallback((id, newPosition) => {
+    const newPostits = postits.map(p => 
+      p.id === id ? { ...p, position: newPosition } : p
+    )
+    setPostits(newPostits)
+    saveToStorage(newPostits)
+  }, [postits])
+
   // Drag handlers
   const handleDragStart = (e, id) => {
-    if (e.target.closest('.postit-content')) {
-      setIsDragging(true)
-      setDragStartX(e.clientX || e.touches?.[0]?.clientX || 0)
-      setDragElement(id)
-      setDragCurrentX(0)
-      e.preventDefault()
-    }
+    const clientX = e.clientX || e.touches?.[0]?.clientX || 0
+    const clientY = e.clientY || e.touches?.[0]?.clientY || 0
+    
+    setIsDragging(true)
+    setDragElement(id)
+    setDragStart({ x: clientX, y: clientY })
+    setDragOffset({ x: 0, y: 0 })
+    e.preventDefault()
   }
 
   const handleDragMove = useCallback((e) => {
     if (!isDragging || !dragElement) return
     
-    const currentX = (e.clientX || e.touches?.[0]?.clientX || 0) - dragStartX
-    const newCurrentX = Math.max(0, currentX)
-    setDragCurrentX(newCurrentX)
+    const clientX = e.clientX || e.touches?.[0]?.clientX || 0
+    const clientY = e.clientY || e.touches?.[0]?.clientY || 0
+    
+    const newOffset = {
+      x: clientX - dragStart.x,
+      y: clientY - dragStart.y
+    }
+    
+    setDragOffset(newOffset)
     e.preventDefault()
-  }, [isDragging, dragElement, dragStartX])
+  }, [isDragging, dragElement, dragStart])
 
   const handleDragEnd = useCallback(() => {
     if (!isDragging || !dragElement) return
     
-    const shouldDelete = dragCurrentX > 150
+    const currentPostit = postits.find(p => p.id === dragElement)
+    if (!currentPostit) return
     
-    if (shouldDelete) {
+    // Check if dragged off screen
+    const screenWidth = window.innerWidth
+    const screenHeight = window.innerHeight
+    const finalX = currentPostit.position.x + dragOffset.x
+    const finalY = currentPostit.position.y + dragOffset.y
+    
+    const isOffScreen = finalX < -200 || finalX > screenWidth + 50 || 
+                       finalY < -200 || finalY > screenHeight + 50
+    
+    if (isOffScreen) {
+      // Delete the post-it
       setTimeout(() => {
         deletePostit(dragElement)
-      }, 300)
+      }, 200)
+    } else {
+      // Update position
+      updatePostitPosition(dragElement, {
+        x: finalX,
+        y: finalY
+      })
     }
     
     setIsDragging(false)
     setDragElement(null)
-    setDragCurrentX(0)
-    setDragStartX(0)
-  }, [isDragging, dragElement, dragCurrentX, deletePostit])
+    setDragOffset({ x: 0, y: 0 })
+    setDragStart({ x: 0, y: 0 })
+  }, [isDragging, dragElement, dragOffset, postits, updatePostitPosition, deletePostit])
 
   // Add global event listeners for drag
   useEffect(() => {
@@ -218,24 +252,46 @@ function App() {
           <div className="postits-grid">
             {postits.map(postit => {
               const isDraggedElement = dragElement === postit.id
-              const progress = isDraggedElement ? Math.min(dragCurrentX / 150, 1) : 0
-              const dragRotation = progress * 15
-              const opacity = 1 - (progress * 0.7)
               const baseRotation = postit.rotation || 0
+              const currentPosition = postit.position || { x: 0, y: 0 }
+              
+              let transform = `rotate(${baseRotation}deg)`
+              let style = {
+                backgroundColor: postit.color,
+                transform,
+                position: currentPosition.x !== 0 || currentPosition.y !== 0 ? 'absolute' : 'relative',
+                left: currentPosition.x !== 0 ? `${currentPosition.x}px` : 'auto',
+                top: currentPosition.y !== 0 ? `${currentPosition.y}px` : 'auto',
+                zIndex: isDraggedElement ? 1000 : 1
+              }
+              
+              if (isDraggedElement && isDragging) {
+                // Check if close to screen edges for deletion preview
+                const finalX = currentPosition.x + dragOffset.x
+                const finalY = currentPosition.y + dragOffset.y
+                const screenWidth = window.innerWidth
+                const screenHeight = window.innerHeight
+                const isNearEdge = finalX < -100 || finalX > screenWidth - 150 || 
+                                  finalY < -100 || finalY > screenHeight - 150
+                
+                transform = `translate(${dragOffset.x}px, ${dragOffset.y}px) rotate(${baseRotation + 5}deg) scale(${isNearEdge ? 0.8 : 1.05})`
+                style = {
+                  ...style,
+                  transform,
+                  transition: 'none',
+                  zIndex: 1000,
+                  cursor: 'grabbing',
+                  opacity: isNearEdge ? 0.6 : 1
+                }
+              } else if (currentPosition.x !== 0 || currentPosition.y !== 0) {
+                style.transition = 'all 0.3s ease'
+              }
               
               return (
                 <div
                   key={postit.id}
                   className={`postit ${isDraggedElement && isDragging ? 'dragging' : ''}`}
-                  style={isDraggedElement ? {
-                    transform: `translateX(${dragCurrentX}px) rotate(${baseRotation + dragRotation}deg)`,
-                    opacity: dragCurrentX > 150 ? 0 : opacity,
-                    transition: !isDragging && dragCurrentX > 150 ? 'all 0.3s ease-out' : 'none',
-                    backgroundColor: postit.color
-                  } : {
-                    transform: `rotate(${baseRotation}deg)`,
-                    backgroundColor: postit.color
-                  }}
+                  style={style}
                   onMouseDown={(e) => handleDragStart(e, postit.id)}
                   onTouchStart={(e) => handleDragStart(e, postit.id)}
                 >
