@@ -64,32 +64,38 @@ html, body {
     position: sticky;
     top: 0;
     z-index: 100;
-    padding: 24px 0;
+    padding: 12px 0; /* Reduzido de 24px para 12px */
 }
 
 .brand {
-    text-align: center;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
 }
 
 .brand-title {
-    font-size: 2.5rem;
+    font-size: 1.8rem; /* Reduzido de 2.5rem para 1.8rem */
     font-weight: 700;
     color: var(--color-primary);
-    margin-bottom: 8px;
+    margin: 0;
+    flex-shrink: 0;
 }
 
 .brand-subtitle {
-    font-size: 1rem;
+    font-size: 0.9rem; /* Reduzido de 1rem para 0.9rem */
     font-weight: 400;
     color: var(--color-text-secondary);
     font-style: italic;
+    text-align: right;
+    margin: 0;
 }
 
 /* Main Content */
 .main {
-    padding: 48px 0 120px;
+    padding: 32px 0 120px; /* Reduzido padding top de 48px para 32px */
     position: relative;
-    min-height: calc(100vh - 200px); /* Allow full vertical space minus header/padding */
+    min-height: calc(100vh - 160px); /* Ajustado para header menor */
 }
 
 /* Post-its Grid */
@@ -495,12 +501,19 @@ html, body {
         padding: 0 16px;
     }
     
+    .brand {
+        flex-direction: column;
+        gap: 4px;
+        text-align: center;
+    }
+    
     .brand-title {
-        font-size: 2rem;
+        font-size: 1.5rem; /* Menor no mobile */
     }
     
     .brand-subtitle {
-        font-size: 0.9rem;
+        font-size: 0.8rem; /* Menor no mobile */
+        text-align: center;
     }
     
     .main {
