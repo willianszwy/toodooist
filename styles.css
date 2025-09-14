@@ -23,12 +23,23 @@
     --font-family: 'Satisfy', cursive;
 }
 
-body {
+html, body {
     font-family: var(--font-family);
     background-color: var(--color-bg);
     color: var(--color-text-primary);
     line-height: 1.6;
     min-height: 100vh;
+    height: 100%;
+    overflow-x: hidden; /* Prevent horizontal scroll only */
+}
+
+#root {
+    min-height: 100vh;
+}
+
+.App {
+    min-height: 100vh;
+    position: relative;
 }
 
 /* Container */
@@ -78,7 +89,7 @@ body {
 .main {
     padding: 48px 0 120px;
     position: relative;
-    overflow: hidden;
+    min-height: calc(100vh - 200px); /* Allow full vertical space minus header/padding */
 }
 
 /* Post-its Grid */

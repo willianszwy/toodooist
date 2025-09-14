@@ -281,7 +281,7 @@ function App() {
               let style = {
                 backgroundColor: postit.color,
                 transform,
-                position: hasBeenMoved ? 'absolute' : 'relative',
+                position: hasBeenMoved ? 'fixed' : 'relative', // Use fixed for full screen positioning
                 left: hasBeenMoved ? `${currentPosition.x}px` : 'auto',
                 top: hasBeenMoved ? `${currentPosition.y}px` : 'auto',
                 zIndex: isDraggedElement ? 1000 : (hasBeenMoved ? 2 : 1)
