@@ -38,6 +38,14 @@ body {
     padding: 0 24px;
 }
 
+/* Full-width container for post-its area */
+.postits-container {
+    width: 100vw;
+    padding: 0 20px;
+    margin: 0;
+    box-sizing: border-box;
+}
+
 /* Header */
 .header {
     background: var(--color-white);
@@ -77,12 +85,14 @@ body {
 .postits-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, 250px);
-    gap: 30px;
+    gap: 25px;
     margin-bottom: 48px;
     justify-content: center;
     align-items: start;
     position: relative;
     min-height: 400px;
+    width: 100%;
+    padding: 0 10px;
 }
 
 .postit {
@@ -467,6 +477,10 @@ body {
 /* Responsive Design */
 @media (max-width: 768px) {
     .container {
+        padding: 0 16px;
+    }
+    
+    .postits-container {
         padding: 0 16px;
     }
     

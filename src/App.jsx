@@ -268,7 +268,7 @@ function App() {
 
       {/* Main Content */}
       <main className="main">
-        <div className="container">
+        <div className="postits-container">
           <div className="postits-grid">
             {postits.map(postit => {
               const isDraggedElement = dragElement === postit.id
