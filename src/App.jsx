@@ -46,8 +46,14 @@ function App() {
       const data = localStorage.getItem('toodooist_data')
       if (data) {
         const parsedData = JSON.parse(data)
-        setPostits(parsedData)
-        console.log('📂 Dados carregados:', parsedData.length, 'post-its')
+        // Ensure all post-its have required properties for backward compatibility
+        const normalizedData = parsedData.map(postit => ({
+          ...postit,
+          rotation: postit.rotation || (Math.random() - 0.5) * 8,
+          position: postit.position || { x: 0, y: 0 }
+        }))
+        setPostits(normalizedData)
+        console.log('📂 Dados carregados:', normalizedData.length, 'post-its')
       }
       console.log('✅ localStorage funcionando:', !!data)
       return true
@@ -172,11 +178,25 @@ function App() {
     const currentPostit = postits.find(p => p.id === dragElement)
     if (!currentPostit) return
     
+    // For post-its that haven't been moved yet (in grid), calculate position from current element location
+    const element = document.querySelector(`[data-postit-id="${dragElement}"]`)
+    const currentPosition = currentPostit.position || { x: 0, y: 0 }
+    
+    let initialX = currentPosition.x
+    let initialY = currentPosition.y
+    
+    // If this is the first time moving this post-it, get its current position from the DOM
+    if (currentPosition.x === 0 && currentPosition.y === 0 && element) {
+      const rect = element.getBoundingClientRect()
+      initialX = rect.left
+      initialY = rect.top
+    }
+    
     // Check if dragged off screen
     const screenWidth = window.innerWidth
     const screenHeight = window.innerHeight
-    const finalX = currentPostit.position.x + dragOffset.x
-    const finalY = currentPostit.position.y + dragOffset.y
+    const finalX = initialX + dragOffset.x
+    const finalY = initialY + dragOffset.y
     
     const isOffScreen = finalX < -200 || finalX > screenWidth + 50 || 
                        finalY < -200 || finalY > screenHeight + 50
@@ -256,23 +276,32 @@ function App() {
               const currentPosition = postit.position || { x: 0, y: 0 }
               
               let transform = `rotate(${baseRotation}deg)`
+              const hasBeenMoved = currentPosition.x !== 0 || currentPosition.y !== 0
+              
               let style = {
                 backgroundColor: postit.color,
                 transform,
-                position: currentPosition.x !== 0 || currentPosition.y !== 0 ? 'absolute' : 'relative',
-                left: currentPosition.x !== 0 ? `${currentPosition.x}px` : 'auto',
-                top: currentPosition.y !== 0 ? `${currentPosition.y}px` : 'auto',
-                zIndex: isDraggedElement ? 1000 : 1
+                position: hasBeenMoved ? 'absolute' : 'relative',
+                left: hasBeenMoved ? `${currentPosition.x}px` : 'auto',
+                top: hasBeenMoved ? `${currentPosition.y}px` : 'auto',
+                zIndex: isDraggedElement ? 1000 : (hasBeenMoved ? 2 : 1)
               }
               
               if (isDraggedElement && isDragging) {
                 // Check if close to screen edges for deletion preview
-                const finalX = currentPosition.x + dragOffset.x
-                const finalY = currentPosition.y + dragOffset.y
+                let previewX = currentPosition.x + dragOffset.x
+                let previewY = currentPosition.y + dragOffset.y
+                
+                // For post-its that haven't been moved, use approximate position
+                if (currentPosition.x === 0 && currentPosition.y === 0) {
+                  previewX = dragOffset.x
+                  previewY = dragOffset.y
+                }
+                
                 const screenWidth = window.innerWidth
                 const screenHeight = window.innerHeight
-                const isNearEdge = finalX < -100 || finalX > screenWidth - 150 || 
-                                  finalY < -100 || finalY > screenHeight - 150
+                const isNearEdge = previewX < -100 || previewX > screenWidth - 150 || 
+                                  previewY < -100 || previewY > screenHeight - 150
                 
                 transform = `translate(${dragOffset.x}px, ${dragOffset.y}px) rotate(${baseRotation + 5}deg) scale(${isNearEdge ? 0.8 : 1.05})`
                 style = {
@@ -283,13 +312,14 @@ function App() {
                   cursor: 'grabbing',
                   opacity: isNearEdge ? 0.6 : 1
                 }
-              } else if (currentPosition.x !== 0 || currentPosition.y !== 0) {
+              } else if (hasBeenMoved) {
                 style.transition = 'all 0.3s ease'
               }
               
               return (
                 <div
                   key={postit.id}
+                  data-postit-id={postit.id}
                   className={`postit ${isDraggedElement && isDragging ? 'dragging' : ''}`}
                   style={style}
                   onMouseDown={(e) => handleDragStart(e, postit.id)}
