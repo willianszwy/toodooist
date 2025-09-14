@@ -9,6 +9,7 @@ function App() {
   const [dragElement, setDragElement] = useState(null)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [isOverTrash, setIsOverTrash] = useState(false)
   const [description, setDescription] = useState('')
   const [date, setDate] = useState('')
 
@@ -104,8 +105,29 @@ function App() {
     return `📅 ${day}/${month}/${year}`
   }
 
-  // Validation
-  const isFormValid = description.trim().length > 0 && description.length <= 40
+  // Calculate date status
+  const getDateStatus = (dateString) => {
+    if (!dateString) return null
+    
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    
+    const targetDate = new Date(dateString)
+    targetDate.setHours(0, 0, 0, 0)
+    
+    const diffTime = targetDate.getTime() - today.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    
+    if (diffDays < 0) return 'overdue'
+    if (diffDays === 0) return 'due-today'
+    if (diffDays <= 2) return 'due-soon'
+    if (diffDays <= 7) return 'approaching'
+    
+    return null
+  }
+
+  // Validation  
+  const isFormValid = description.trim().length > 0 && description.length <= 120
 
   // Handle form submission
   const handleFormSubmit = (e) => {
@@ -168,6 +190,18 @@ function App() {
       y: clientY - dragStart.y
     }
     
+    // Check if over trash zone (bottom-left corner)
+    const trashZone = {
+      x: 0,
+      y: window.innerHeight - 120,
+      width: 120,
+      height: 120
+    }
+    
+    const isInTrashZone = clientX >= trashZone.x && clientX <= trashZone.x + trashZone.width &&
+                         clientY >= trashZone.y && clientY <= trashZone.y + trashZone.height
+    
+    setIsOverTrash(isInTrashZone)
     setDragOffset(newOffset)
     e.preventDefault()
   }, [isDragging, dragElement, dragStart])
@@ -178,36 +212,29 @@ function App() {
     const currentPostit = postits.find(p => p.id === dragElement)
     if (!currentPostit) return
     
-    // For post-its that haven't been moved yet (in grid), calculate position from current element location
-    const element = document.querySelector(`[data-postit-id="${dragElement}"]`)
-    const currentPosition = currentPostit.position || { x: 0, y: 0 }
-    
-    let initialX = currentPosition.x
-    let initialY = currentPosition.y
-    
-    // If this is the first time moving this post-it, get its current position from the DOM
-    if (currentPosition.x === 0 && currentPosition.y === 0 && element) {
-      const rect = element.getBoundingClientRect()
-      initialX = rect.left
-      initialY = rect.top
-    }
-    
-    // Check if dragged off screen
-    const screenWidth = window.innerWidth
-    const screenHeight = window.innerHeight
-    const finalX = initialX + dragOffset.x
-    const finalY = initialY + dragOffset.y
-    
-    const isOffScreen = finalX < -200 || finalX > screenWidth + 50 || 
-                       finalY < -200 || finalY > screenHeight + 50
-    
-    if (isOffScreen) {
-      // Delete the post-it
+    if (isOverTrash) {
+      // Delete the post-it with animation
       setTimeout(() => {
         deletePostit(dragElement)
       }, 200)
     } else {
       // Update position
+      const element = document.querySelector(`[data-postit-id="${dragElement}"]`)
+      const currentPosition = currentPostit.position || { x: 0, y: 0 }
+      
+      let initialX = currentPosition.x
+      let initialY = currentPosition.y
+      
+      // If this is the first time moving this post-it, get its current position from the DOM
+      if (currentPosition.x === 0 && currentPosition.y === 0 && element) {
+        const rect = element.getBoundingClientRect()
+        initialX = rect.left
+        initialY = rect.top
+      }
+      
+      const finalX = initialX + dragOffset.x
+      const finalY = initialY + dragOffset.y
+      
       updatePostitPosition(dragElement, {
         x: finalX,
         y: finalY
@@ -218,7 +245,8 @@ function App() {
     setDragElement(null)
     setDragOffset({ x: 0, y: 0 })
     setDragStart({ x: 0, y: 0 })
-  }, [isDragging, dragElement, dragOffset, postits, updatePostitPosition, deletePostit])
+    setIsOverTrash(false)
+  }, [isDragging, dragElement, dragOffset, postits, updatePostitPosition, deletePostit, isOverTrash])
 
   // Add global event listeners for drag
   useEffect(() => {
@@ -274,6 +302,7 @@ function App() {
               const isDraggedElement = dragElement === postit.id
               const baseRotation = postit.rotation || 0
               const currentPosition = postit.position || { x: 0, y: 0 }
+              const dateStatus = getDateStatus(postit.date)
               
               let transform = `rotate(${baseRotation}deg)`
               const hasBeenMoved = currentPosition.x !== 0 || currentPosition.y !== 0
@@ -288,29 +317,19 @@ function App() {
               }
               
               if (isDraggedElement && isDragging) {
-                // Check if close to screen edges for deletion preview
-                let previewX = currentPosition.x + dragOffset.x
-                let previewY = currentPosition.y + dragOffset.y
+                // Apply drag transform with trash preview
+                const scaleValue = isOverTrash ? 0.7 : 1.05
+                const rotationValue = baseRotation + (isOverTrash ? 15 : 5)
                 
-                // For post-its that haven't been moved, use approximate position
-                if (currentPosition.x === 0 && currentPosition.y === 0) {
-                  previewX = dragOffset.x
-                  previewY = dragOffset.y
-                }
-                
-                const screenWidth = window.innerWidth
-                const screenHeight = window.innerHeight
-                const isNearEdge = previewX < -100 || previewX > screenWidth - 150 || 
-                                  previewY < -100 || previewY > screenHeight - 150
-                
-                transform = `translate(${dragOffset.x}px, ${dragOffset.y}px) rotate(${baseRotation + 5}deg) scale(${isNearEdge ? 0.8 : 1.05})`
+                transform = `translate(${dragOffset.x}px, ${dragOffset.y}px) rotate(${rotationValue}deg) scale(${scaleValue})`
                 style = {
                   ...style,
                   transform,
                   transition: 'none',
                   zIndex: 1000,
                   cursor: 'grabbing',
-                  opacity: isNearEdge ? 0.6 : 1
+                  opacity: isOverTrash ? 0.5 : 1,
+                  filter: isOverTrash ? 'brightness(0.7) saturate(0.5)' : 'none'
                 }
               } else if (hasBeenMoved) {
                 style.transition = 'all 0.3s ease'
@@ -325,6 +344,16 @@ function App() {
                   onMouseDown={(e) => handleDragStart(e, postit.id)}
                   onTouchStart={(e) => handleDragStart(e, postit.id)}
                 >
+                  {/* Date Status Badge */}
+                  {dateStatus && (
+                    <div className={`date-badge ${dateStatus}`}>
+                      {dateStatus === 'approaching' && <div className="badge-dot"></div>}
+                      {dateStatus === 'due-soon' && <div className="badge-icon warning">!</div>}
+                      {dateStatus === 'due-today' && <div className="badge-icon today">●</div>}
+                      {dateStatus === 'overdue' && <div className="badge-icon overdue">×</div>}
+                    </div>
+                  )}
+                  
                   <div className="postit-content">
                     <div className="postit-description">{postit.description}</div>
                     {postit.date && (
@@ -345,6 +374,14 @@ function App() {
           )}
         </div>
       </main>
+
+      {/* Trash Zone */}
+      {isDragging && (
+        <div className={`trash-zone ${isOverTrash ? 'active' : ''}`}>
+          <div className="trash-icon">🗑️</div>
+          <div className="trash-text">Solte para excluir</div>
+        </div>
+      )}
 
       {/* FAB Button */}
       <button className="fab" onClick={() => setIsModalOpen(true)}>
@@ -379,7 +416,7 @@ function App() {
                   placeholder="Digite sua nota aqui..."
                   value={description}
                   onChange={handleDescriptionChange}
-                  maxLength="40"
+                  maxLength="120"
                   autoFocus
                 />
                 
@@ -394,8 +431,8 @@ function App() {
             <div className="postit-controls">
               {/* Contador de caracteres */}
               <div className="char-counter-editor">
-                <span className={description.length > 35 ? 'warning' : ''}>
-                  {description.length}/40
+                <span className={description.length > 100 ? 'warning' : ''}>
+                  {description.length}/120
                 </span>
               </div>
 
