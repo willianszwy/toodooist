@@ -270,7 +270,7 @@ html, body {
     line-height: 1;
 }
 
-/* Modal */
+/* Modal Post-it Interativo */
 .modal {
     position: fixed;
     top: 0;
@@ -281,6 +281,7 @@ html, body {
     display: none;
     align-items: center;
     justify-content: center;
+    padding: 20px;
 }
 
 .modal.show {
@@ -293,66 +294,220 @@ html, body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(6px);
 }
 
-.modal-content {
-    background: var(--color-white);
-    border-radius: var(--border-radius-lg);
-    width: 100%;
-    max-width: 480px;
-    margin: 24px;
-    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+/* Container do Editor */
+.modal-postit-editor {
     position: relative;
-    transform: scale(0.9);
-    opacity: 0;
-    transition: all 0.3s var(--transition);
-}
-
-.modal.show .modal-content {
-    transform: scale(1);
-    opacity: 1;
-}
-
-.modal-header {
-    padding: 24px 24px 0;
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
     align-items: center;
+    gap: 30px;
+    animation: modalSlideIn 0.4s ease-out;
 }
 
-.modal-header h2 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--color-text-primary);
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
-.modal-close {
-    background: none;
-    border: none;
-    font-size: 2rem;
-    color: var(--color-text-secondary);
-    cursor: pointer;
+/* Botão fechar */
+.modal-close-btn {
+    position: absolute;
+    top: -15px;
+    right: -15px;
     width: 32px;
     height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     border-radius: 50%;
-    transition: all 0.2s var(--transition);
+    border: none;
+    background: rgba(255, 255, 255, 0.9);
+    color: #666;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease;
+    z-index: 10;
 }
 
-.modal-close:hover {
-    background: #f0f0f0;
+.modal-close-btn:hover {
+    background: white;
+    color: #333;
+    transform: scale(1.1);
+}
+
+/* Post-it Editor */
+.postit-editor {
+    width: 300px !important;
+    height: 300px !important;
+    cursor: default;
+    transition: all 0.3s ease;
+    animation: postitAppear 0.5s ease-out;
+}
+
+@keyframes postitAppear {
+    from {
+        opacity: 0;
+        transform: rotate(-5deg) scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: rotate(-2deg) scale(1.1);
+    }
+}
+
+/* Textarea dentro do post-it */
+.postit-textarea {
+    width: 100%;
+    height: 200px;
+    border: none;
+    background: transparent;
+    resize: none;
+    font-family: var(--font-family);
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.8);
+    line-height: 1.4;
+    text-shadow: 0 1px 1px rgba(255,255,255,0.3);
+    outline: none;
+    padding: 0;
+    margin: 0;
+}
+
+.postit-textarea::placeholder {
+    color: rgba(0, 0, 0, 0.4);
+    font-style: italic;
+}
+
+.postit-textarea:focus {
+    outline: none;
+}
+
+/* Controles do Editor */
+.postit-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 20px 24px;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(10px);
+    min-width: 300px;
+}
+
+/* Contador de caracteres do editor */
+.char-counter-editor {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+}
+
+.char-counter-editor .warning {
+    color: #ff6b35;
+}
+
+/* Controle de data */
+.date-control {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+}
+
+.date-control label {
+    font-size: 0.9rem;
+    font-weight: 500;
     color: var(--color-text-primary);
 }
 
-/* Form */
-.modal-form {
-    padding: 24px;
+.date-control input {
+    padding: 8px 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    transition: border-color 0.2s ease;
 }
 
+.date-control input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+
+/* Controle de cor */
+.color-control {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+}
+
+.color-control label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+.color-control .color-picker {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+/* Botões de ação */
+.action-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.action-buttons .btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.action-buttons .btn-secondary {
+    background: transparent;
+    color: var(--color-text-secondary);
+    border: 2px solid #e0e0e0;
+}
+
+.action-buttons .btn-secondary:hover {
+    color: var(--color-text-primary);
+    border-color: #ccc;
+}
+
+.action-buttons .btn-primary {
+    background: var(--color-primary);
+    color: white;
+}
+
+.action-buttons .btn-primary:hover:not(:disabled) {
+    background: var(--color-secondary);
+    transform: translateY(-1px);
+}
+
+.action-buttons .btn-primary:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Form Group Legacy (manter para compatibilidade) */
 .form-group {
     margin-bottom: 24px;
 }
@@ -544,14 +699,42 @@ html, body {
         font-size: 1.8rem;
     }
     
-    .modal-content {
-        margin: 16px;
-        max-width: calc(100% - 32px);
+    /* Modal Post-it Responsivo */
+    .modal {
+        padding: 16px;
     }
     
-    .modal-header,
-    .modal-form {
-        padding: 20px;
+    .modal-postit-editor {
+        gap: 20px;
+    }
+    
+    .postit-editor {
+        width: 260px !important;
+        height: 260px !important;
+    }
+    
+    .postit-textarea {
+        height: 170px;
+        font-size: 1rem;
+    }
+    
+    .postit-controls {
+        min-width: 260px;
+        padding: 16px 20px;
+    }
+    
+    .color-control .color-picker {
+        gap: 8px;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .action-buttons .btn {
+        width: 100%;
+        padding: 12px;
     }
     
     .form-actions {

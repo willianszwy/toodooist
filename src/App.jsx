@@ -109,7 +109,7 @@ function App() {
 
   // Handle form submission
   const handleFormSubmit = (e) => {
-    e.preventDefault()
+    if (e && e.preventDefault) e.preventDefault()
     
     if (isFormValid) {
       createPostit(description.trim(), date || null, selectedColor)
@@ -351,51 +351,67 @@ function App() {
         <span className="fab-icon">+</span>
       </button>
 
-      {/* Modal */}
+      {/* Modal Post-it Interativo */}
       {isModalOpen && (
         <div className="modal show">
           <div className="modal-backdrop" onClick={() => setIsModalOpen(false)}></div>
-          <div className="modal-content">
-            <div className="modal-header">
-              <h2>Novo Post-it</h2>
-              <button 
-                className="modal-close" 
-                onClick={() => setIsModalOpen(false)}
-              >
-                &times;
-              </button>
-            </div>
-            
-            <form className="modal-form" onSubmit={handleFormSubmit}>
-              <div className="form-group">
-                <label htmlFor="description">Descrição *</label>
-                <textarea 
-                  id="description" 
-                  name="description" 
-                  placeholder="Digite a descrição do seu post-it..."
-                  maxLength="40"
+          
+          <div className="modal-postit-editor">
+            <button 
+              className="modal-close-btn" 
+              onClick={() => setIsModalOpen(false)}
+            >
+              ✕
+            </button>
+
+            {/* Post-it Preview */}
+            <div 
+              className="postit postit-editor"
+              style={{ 
+                backgroundColor: selectedColor,
+                transform: 'rotate(-2deg) scale(1.1)'
+              }}
+            >
+              {/* Área de texto editável */}
+              <div className="postit-content">
+                <textarea
+                  className="postit-textarea"
+                  placeholder="Digite sua nota aqui..."
                   value={description}
                   onChange={handleDescriptionChange}
-                  required
+                  maxLength="40"
+                  autoFocus
                 />
-                <div className="char-counter">
-                  <span>{description.length}</span>/40
-                </div>
+                
+                {/* Data no canto */}
+                {date && (
+                  <div className="postit-date">{formatDate(date)}</div>
+                )}
+              </div>
+            </div>
+
+            {/* Controles */}
+            <div className="postit-controls">
+              {/* Contador de caracteres */}
+              <div className="char-counter-editor">
+                <span className={description.length > 35 ? 'warning' : ''}>
+                  {description.length}/40
+                </span>
               </div>
 
-              <div className="form-group">
-                <label htmlFor="date">Data (opcional)</label>
+              {/* Seletor de data */}
+              <div className="date-control">
+                <label>📅 Data (opcional)</label>
                 <input 
                   type="date" 
-                  id="date" 
-                  name="date" 
                   value={date}
                   onChange={handleDateChange}
                 />
               </div>
 
-              <div className="form-group">
-                <label>Cor</label>
+              {/* Seletor de cor */}
+              <div className="color-control">
+                <label>🎨 Cor do Post-it</label>
                 <div className="color-picker">
                   {colors.map(color => (
                     <button
@@ -404,12 +420,14 @@ function App() {
                       className={`color-option ${selectedColor === color ? 'selected' : ''}`}
                       style={{ backgroundColor: color }}
                       onClick={() => setSelectedColor(color)}
+                      title={`Cor ${color}`}
                     />
                   ))}
                 </div>
               </div>
 
-              <div className="form-actions">
+              {/* Botões de ação */}
+              <div className="action-buttons">
                 <button 
                   type="button" 
                   className="btn btn-secondary" 
@@ -418,14 +436,15 @@ function App() {
                   Cancelar
                 </button>
                 <button 
-                  type="submit" 
+                  type="button"
                   className="btn btn-primary"
                   disabled={!isFormValid}
+                  onClick={handleFormSubmit}
                 >
-                  Criar Post-it
+                  📌 Colar no Quadro
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}
